@@ -27,7 +27,14 @@ if (!window.supabase?.createClient) {
 // Single shared client. Main script isi global client ko read karta hai.
 const supabaseClient = window.supabase.createClient(
   SUPABASE_URL , 
-  SUPABASE_KEY
+  SUPABASE_KEY,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
 );
 window.supabaseClient = supabaseClient;
 console.log("Supabase Connected");
