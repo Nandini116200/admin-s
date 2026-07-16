@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customers | JFAM Admin</title>
+  <link rel="stylesheet" href="./admin.css">
+</head>
+<body data-page="customers">
+  <div id="adminPageShell"></div>
+  <style>
+    .customers-dashboard {
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .customers-dashboard .stats-grid {
+      grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
+    }
+
+    .customers-dashboard .stat-card {
+      align-content: start;
+      grid-template-rows: auto auto minmax(34px, 1fr);
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .customers-dashboard .stat-heading {
+      justify-content: space-between;
+      min-width: 0;
+    }
+
+    .customers-dashboard .stat-heading > span:first-child,
+    .customers-dashboard .stat-detail,
+    .customers-dashboard .stats-grid strong {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .customers-dashboard .stats-grid strong {
+      line-height: 1.08;
+      max-width: 100%;
+    }
+
+    .customers-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 10px 28px rgba(87, 51, 26, 0.06);
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+      padding: 20px;
+    }
+
+    .customers-directory-head {
+      align-items: center;
+      display: grid;
+      gap: 14px;
+      grid-template-columns: minmax(0, 1fr) minmax(min(330px, 100%), 400px);
+      min-width: 0;
+    }
+
+    .customers-directory-head h2 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 26px;
+      line-height: 1.15;
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .customer-search-wrap {
+      align-items: center;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 6px 16px rgba(87, 51, 26, 0.08);
+      display: grid;
+      gap: 10px;
+      grid-template-columns: auto minmax(0, 1fr);
+      min-width: 0;
+      padding: 0 12px;
+    }
+
+    .customer-search-wrap .lumi-icon {
+      color: var(--muted);
+      height: 18px;
+      width: 18px;
+    }
+
+    .customer-search-wrap input {
+      border: 0;
+      box-shadow: none;
+      min-height: 42px;
+      padding-left: 0;
+    }
+
+    .customer-search-wrap input:focus {
+      box-shadow: none;
+      outline: none;
+    }
+
+    .customers-table-wrap {
+      min-width: 0;
+      overflow-x: auto;
+    }
+
+    .customers-table {
+      border-collapse: collapse;
+      min-width: 900px;
+      width: 100%;
+    }
+
+    .customers-table th,
+    .customers-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 12px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .customers-table th {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .customers-table td {
+      font-size: 14px;
+      overflow-wrap: anywhere;
+    }
+
+    .customers-table td:nth-child(4),
+    .customers-table td:nth-child(5) {
+      text-align: right;
+    }
+
+    @media (max-width: 760px) {
+      .customers-directory-head {
+        grid-template-columns: 1fr;
+      }
+
+      .customers-table {
+        min-width: 780px;
+      }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./Supabase.js"></script>
+  <script src="./admin-pages.js"></script>
+  <script src="./customers-page.js"></script>
+</body>
+</html>

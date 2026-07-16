@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+  <main class="admin-shell">
+    <section class="admin-login" id="adminLoginPanel">
+      <div>
+        <p class="eyebrow">Admin access</p>
+        <h1 id="adminLoginTitle">JFAM Orders</h1>
+        <p class="muted" id="adminLoginCopy">Sign in with the admin email that is added in Supabase.</p>
+      </div>
+      <form id="adminLoginForm" class="admin-login-form">
+        <input type="email" id="adminEmailInput" placeholder="Admin email" autocomplete="email" required>
+        <button type="submit">Send OTP</button>
+      </form>
+      <form id="adminOtpForm" class="admin-login-form hidden">
+        <p class="otp-email" id="adminOtpEmail"></p>
+        <div class="otp-grid" aria-label="Enter 6 digit OTP">
+          <input class="otp-digit" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="1" aria-label="OTP digit 1">
+          <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" aria-label="OTP digit 2">
+          <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" aria-label="OTP digit 3">
+          <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" aria-label="OTP digit 4">
+          <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" aria-label="OTP digit 5">
+          <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" aria-label="OTP digit 6">
+        </div>
+        <input type="hidden" id="adminOtpInput">
+        <button type="submit">Verify OTP</button>
+        <div class="otp-resend-row">
+          <button type="button" id="adminResendOtpBtn" class="secondary-btn" disabled>Resend OTP</button>
+          <span id="adminResendTimer">Resend OTP in 60s</span>
+        </div>
+      </form>
+      <p class="status-text" id="adminLoginStatus"></p>
+    </section>
+
+    <section class="admin-dashboard hidden" id="adminDashboard">
+      <aside class="admin-sidebar" aria-label="Admin navigation">
+        <a class="brand-lockup" href="index.html" aria-label="JFAM founder console">
+          <span class="brand-mark">J</span>
+          <span>
+            <strong>JFAM</strong>
+            <small>Founder console</small>
+          </span>
+        </a>
+
+        <nav class="side-nav">
+          <p>Overview</p>
+          <a class="active" href="index.html" data-nav-key="dashboard"><span>📊</span> Dashboard</a>
+          <a href="Kpis.html" data-nav-key="kpis"><span>⏳</span> KPIs</a>
+        
+          <p>Today</p>
+          <a href="Confirmed.html" data-nav-key="confirmed"><span>✔️</span> Orders Confirmed</a>
+          <a href="Orders.html" data-nav-key="delivered"><span>✅</span> Orders Delivered</a>
+          <a href="Revenue.html" data-nav-key="revenue"><span>🪙</span> Revenue</a>
+          
+          <p>Manage</p>
+          <a href="Subscriptions.html" data-nav-key="subscriptions"><span>🔁</span> Subscriptions</a>
+          <a href="Delivery.html" data-nav-key="delivery"><span>🚛</span> Delivery Partners</a>
+          <a href="Customers.html" data-nav-key="customers"><span>👥</span> Customers</a>
+          <a href="Products.html" data-nav-key="products"><span>📥</span> Products</a>
+        </nav>
+      </aside>
+
+      <div class="admin-content">
+        <header class="admin-header">
+          <div class="admin-title-row">
+            <button type="button" class="sidebar-toggle" id="sidebarToggleBtn" aria-label="Collapse sidebar" aria-expanded="true">
+              <span aria-hidden="true">&#9776;</span>
+            </button>
+            <div>
+              <div class="title-action-row">
+                <h1>Good morning, founder</h1>
+                <button type="button" class="refresh-icon-btn" id="refreshOrdersBtn" aria-label="Refresh orders" title="Refresh orders">
+                  <span aria-hidden="true"></span>
+                </button>
+              </div>
+              <div class="header-copy-row">
+                <p class="header-copy">Here's how the route is running today.Tap any card for full detail.</p>
+                <span class="delivery-status"><span class="status-dot" aria-hidden="true"></span>Delivery window active</span>
+              </div>
+            </div>
+          </div>
+        </header>
+        <hr/>
+
+        <section class="stats-grid">
+          <article class="stat-card">
+            <div class="stat-heading">
+              <span class="stat-icon" data-stat-icon="confirmed" aria-hidden="true"></span>
+              <span>Orders Confirmed</span>
+            </div>
+            <strong id="totalOrdersStat">0</strong>
+            <span class="stat-detail" id="confirmedOrdersDetail">From customer app today</span>
+            <span class="stat-trend"><span class="trend-icon" aria-hidden="true"></span><span id="confirmedOrdersTrend">+ 0% from yesterday</span></span>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-heading">
+              <span class="stat-icon" data-stat-icon="delivered" aria-hidden="true"></span>
+              <span>Orders Delivered</span>
+            </div>
+            <strong id="confirmedOrdersStat">0</strong>
+            <span class="stat-detail" id="deliveredOrdersDetail">0 still out for delivery</span>
+            <span class="stat-trend"><span class="trend-icon" aria-hidden="true"></span><span id="deliveredOrdersTrend">+ 0% from yesterday</span></span>
+          </article>
+          <article class="stat-card">
+            <div class="stat-heading">
+              <span class="stat-icon" data-stat-icon="revenue" aria-hidden="true"></span>
+              <span>Revenue Delivered</span>
+            </div>
+            <strong id="todayOrdersStat">0</strong>
+            <span class="stat-detail" id="revenueDeliveredDetail">Target &#8377;45,000</span>
+            <span class="stat-trend"><span class="trend-icon" aria-hidden="true"></span><span id="revenueDeliveredTrend">+ 0% from yesterday</span></span>
+          </article>
+          <article class="stat-card">
+            <div class="stat-heading">
+              <span class="stat-icon" data-stat-icon="customers" aria-hidden="true"></span>
+              <span>New Subscribers</span>
+            </div>
+            <strong id="revenueStat">Rs. 0</strong>
+            <span class="stat-detail" id="newSubscribersDetail">0 cancellations today</span>
+            <span class="stat-trend"><span class="trend-icon" aria-hidden="true"></span><span id="newSubscribersTrend">+0% from yesterday</span></span>
+          </article>
+        </section>
+
+        <section class="revenue-target-panel" aria-label="Today's revenue target" style="--target-progress: 0%;">
+          <div class="target-main">
+            <span class="target-label">TODAY'S REVENUE TARGET</span>
+            <div class="target-amount">
+              <strong id="targetRevenueValue">&#8377;0</strong>
+              <span>/ <span id="targetRevenueGoal">&#8377;45,000</span></span>
+            </div>
+            <div class="target-progress-track" aria-hidden="true">
+              <span id="targetProgressFill" class="target-progress-fill"></span>
+            </div>
+            <p id="targetProgressSummary">0% complete · 0 orders still in transit</p>
+          </div>
+
+          <div class="target-metrics">
+            <article>
+              <span>ON-TIME RATE</span>
+              <strong id="targetOnTimeRate">0%</strong>
+            </article>
+            <article>
+              <span>AVG ORDER</span>
+              <strong id="targetAvgOrder">&#8377;0</strong>
+            </article>
+            <article>
+              <span>ACTIVE SUBS</span>
+              <strong id="targetActiveSubs">0</strong>
+            </article>
+            <article>
+              <span>PENDING DROPS</span>
+              <strong><span class="target-clock" aria-hidden="true"></span><span id="targetPendingDrops">0</span></strong>
+            </article>
+          </div>
+        </section>
+
+        <section class="explore-section" aria-labelledby="exploreTitle">
+          <h2 id="exploreTitle">Explore</h2>
+          <div class="explore-grid">
+            <a class="explore-card" href="Confirmed.html" data-nav-key="confirmed">
+              <span class="explore-icon" data-stat-icon="confirmed" aria-hidden="true"></span>
+              <span class="explore-arrow" aria-hidden="true">-&gt;</span>
+              <strong>Orders Confirmed</strong>
+              <span>Every order placed through the customer app today.</span>
+              <b id="exploreConfirmedValue">0</b>
+            </a>
+            <a class="explore-card" href="Orders.html" data-nav-key="delivered">
+              <span class="explore-icon" data-stat-icon="delivered" aria-hidden="true"></span>
+              <span class="explore-arrow" aria-hidden="true">-&gt;</span>
+              <strong>Orders Delivered</strong>
+              <span>Marked complete by delivery partners.</span>
+              <b id="exploreDeliveredValue">0</b>
+            </a>
+            <a class="explore-card" href="Revenue.html" data-nav-key="revenue">
+              <span class="explore-icon warm" data-stat-icon="revenue" aria-hidden="true"></span>
+              <span class="explore-arrow" aria-hidden="true">-&gt;</span>
+              <strong>Revenue</strong>
+              <span>Money delivered today, weekly trend and category split.</span>
+              <b id="exploreRevenueValue">&#8377;0</b>
+            </a>
+            <a class="explore-card" href="Kpis.html" data-nav-key="kpis">
+              <span class="explore-icon gold" data-stat-icon="kpi" aria-hidden="true"></span>
+              <span class="explore-arrow" aria-hidden="true">-&gt;</span>
+              <strong>KPIs</strong>
+              <span>Growth, retention, revenue quality and operations.</span>
+              <b id="exploreKpiValue">0%</b>
+            </a>
+            <a class="explore-card" href="Subscriptions.html" data-nav-key="subscriptions">
+              <span class="explore-icon" data-stat-icon="subscriptions" aria-hidden="true"></span>
+              <span class="explore-arrow" aria-hidden="true">-&gt;</span>
+              <strong>Subscriptions</strong>
+              <span>Active recurring plans and renewal calendar.</span>
+              <b id="exploreSubscriptionsValue">0</b>
+            </a>
+            <a class="explore-card" href="Delivery.html" data-nav-key="delivery">
+              <span class="explore-icon" data-stat-icon="delivery" aria-hidden="true"></span>
+              <span class="explore-arrow" aria-hidden="true">-&gt;</span>
+              <strong>Delivery Partners</strong>
+              <span>Route-by-route performance from the delivery app.</span>
+              <b id="exploreDeliveryValue">0% on-time</b>
+            </a>
+            <a class="explore-card" href="Customers.html" data-nav-key="customers">
+              <span class="explore-icon warm" data-stat-icon="customers" aria-hidden="true"></span>
+              <span class="explore-arrow" aria-hidden="true">-&gt;</span>
+              <strong>Customers</strong>
+              <span>Directory, LTV and subscription status.</span>
+              <b id="exploreCustomersValue">0</b>
+            </a>
+            <a class="explore-card" href="Products.html" data-nav-key="products">
+              <span class="explore-icon" data-stat-icon="products" aria-hidden="true"></span>
+              <span class="explore-arrow" aria-hidden="true">-&gt;</span>
+              <strong>Products</strong>
+              <span>Catalogue, stock and units sold today.</span>
+              <b id="exploreProductsValue">0 SKUs</b>
+            </a>
+          </div>
+        </section>
+
+        <section class="orders-toolbar" aria-label="Order filters">
+          <input type="search" id="orderSearchInput" placeholder="Search orders, customer, mobile">
+          <select id="orderStatusFilter" aria-label="Filter by status">
+            <option value="">All statuses</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Preparing">Preparing</option>
+            <option value="Out for Delivery">Out for Delivery</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </section>
+
+        <section id="ordersList" class="orders-list"></section>
+      </div>
+
+      <nav class="bottom-nav" aria-label="Primary admin navigation">
+        <a class="active" href="index.html"><span>▦</span> Dashboard</a>
+        <a href="Orders.html"><span>✓</span> Orders</a>
+        <a href="Revenue.html"><span>₹</span> Revenue</a>
+        <a href="Products.html"><span>☰</span> Products</a>
+      </nav>
+    </section>
+  </main>
+
+  <div id="adminToast" class="admin-toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./Supabase.js"></script>
+  <script src="./admin.js"></script>
+</body>
+</html>

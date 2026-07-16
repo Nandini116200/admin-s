@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orders Confirmed | JFAM Admin</title>
+  <link rel="stylesheet" href="./admin.css">
+</head>
+<body data-page="confirmed">
+  <div id="adminPageShell"></div>
+  <style>
+    .confirmed-dashboard {
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .confirmed-dashboard .stats-grid {
+      grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
+    }
+
+    .confirmed-dashboard .stat-card {
+      align-content: start;
+      grid-template-rows: auto auto minmax(34px, 1fr);
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .confirmed-dashboard .stat-heading,
+    .confirmed-dashboard .stat-heading > span:last-child,
+    .confirmed-dashboard .stat-detail,
+    .confirmed-order-card,
+    .confirmed-order-meta,
+    .confirmed-items {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .confirmed-dashboard .stats-grid strong {
+      line-height: 1.08;
+      max-width: 100%;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .confirmed-chart-card,
+    .confirmed-source-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 10px 28px rgba(87, 51, 26, 0.06);
+      display: grid;
+      gap: 16px;
+      min-width: 0;
+      padding: 20px;
+    }
+
+    .confirmed-section-head {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .confirmed-section-head h2 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 26px;
+      line-height: 1.15;
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .confirmed-section-head p {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    .confirmed-chart-frame {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: auto minmax(0, 1fr);
+      min-width: 0;
+    }
+
+    .confirmed-chart-scale {
+      color: var(--muted);
+      display: grid;
+      font-size: 13px;
+      grid-template-rows: repeat(5, 1fr);
+      line-height: 1;
+      padding: 15px 0 20px;
+      text-align: right;
+    }
+
+    .confirmed-chart {
+      align-items: end;
+      background-image:
+        linear-gradient(to top, rgba(87, 51, 26, 0.18) 1px, transparent 1px),
+        linear-gradient(to right, rgba(87, 51, 26, 0.14) 1px, transparent 1px);
+      background-size: 100% 25%, 20% 100%;
+      border-bottom: 1px solid rgba(87, 51, 26, 0.42);
+      border-left: 1px solid rgba(87, 51, 26, 0.42);
+      display: grid;
+      gap: clamp(8px, 2vw, 22px);
+      grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
+      min-height: 260px;
+      min-width: 0;
+      padding: 18px 16px 0;
+    }
+
+    .confirmed-bar-cell {
+      align-items: center;
+      display: grid;
+      gap: 8px;
+      grid-template-rows: 1fr auto;
+      min-width: 0;
+    }
+
+    .confirmed-bar {
+      align-self: end;
+      background: #cf6540;
+      border-radius: 8px 8px 0 0;
+      min-height: 5px;
+      width: 100%;
+    }
+
+    .confirmed-bar-label {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.2;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      text-align: center;
+    }
+
+    .confirmed-source-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .confirmed-source-row {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .confirmed-source-top {
+      align-items: baseline;
+      display: grid;
+      gap: 10px;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      min-width: 0;
+    }
+
+    .confirmed-source-top span:first-child,
+    .confirmed-source-top strong {
+      overflow-wrap: anywhere;
+    }
+
+    .confirmed-source-top span {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .confirmed-source-track {
+      background: #f4ece5;
+      border-radius: 999px;
+      height: 10px;
+      overflow: hidden;
+    }
+
+    .confirmed-source-fill {
+      background: #cf6540;
+      border-radius: inherit;
+      display: block;
+      height: 100%;
+      width: var(--source-width, 0%);
+    }
+
+    .confirmed-controls {
+      align-items: end;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+    }
+
+    .confirmed-orders-list {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .confirmed-order-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 10px 28px rgba(87, 51, 26, 0.06);
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .confirmed-order-top {
+      align-items: start;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      min-width: 0;
+    }
+
+    .confirmed-order-title {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0;
+      min-width: 0;
+    }
+
+    .confirmed-order-title strong {
+      overflow-wrap: anywhere;
+    }
+
+    .confirmed-order-amount {
+      color: #cf6540;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(20px, 3vw, 28px);
+      line-height: 1.05;
+      overflow-wrap: anywhere;
+      text-align: right;
+    }
+
+    .confirmed-order-meta {
+      color: var(--muted);
+      display: grid;
+      gap: 5px;
+      font-size: 14px;
+    }
+
+    .confirmed-items {
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.4;
+      padding-top: 10px;
+    }
+
+    @media (max-width: 640px) {
+      .confirmed-chart-frame {
+        grid-template-columns: 1fr;
+      }
+
+      .confirmed-chart-scale {
+        display: none;
+      }
+
+      .confirmed-order-top {
+        grid-template-columns: 1fr;
+      }
+
+      .confirmed-order-amount {
+        text-align: left;
+      }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./Supabase.js"></script>
+  <script src="./admin-pages.js"></script>
+  <script src="./confirmed-page.js"></script>
+</body>
+</html>
