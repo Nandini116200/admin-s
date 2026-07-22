@@ -8,6 +8,20 @@ const productIcons = {
 
 let productRows = [];
 
+const PRODUCT_CATALOGUE = [
+  { name: "Raw Buffalo Milk", sku: "P-01", price: 75, unit: "L" },
+  { name: "Raw Cow Milk", sku: "P-02", price: 51, unit: "L" },
+  { name: "Raw A2 Cow Milk", sku: "P-03", price: 85, unit: "L" },
+  { name: "Buffalo Bilona Chaach", sku: "P-04", price: 40, unit: "L" },
+  { name: "Cow Bilona Chaach", sku: "P-05", price: 35, unit: "L" },
+  { name: "Buffalo Ghee", sku: "P-06", price: 1300, unit: "kg" },
+  { name: "Cow Ghee", sku: "P-07", price: 1100, unit: "kg" },
+  { name: "Raw A2 Cow Ghee", sku: "P-08", price: 2800, unit: "kg" },
+  { name: "Dahi", sku: "P-09", price: 72, unit: "500gm" },
+  { name: "Paneer", sku: "P-10", price: 450, unit: "kg" }
+];
+
+
 function productEscape(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -56,6 +70,11 @@ function productTrend(current, previous) {
 
 function productKey(name) {
   return String(name || "Unknown product").trim().toLowerCase();
+}
+
+function productCatalogueIndex(name) {
+  const key = productKey(name);
+  return PRODUCT_CATALOGUE.findIndex(product => productKey(product.name) === key);
 }
 
 function productSku(index, product) {
