@@ -89,6 +89,14 @@ function productStock(product) {
 function productPrice(product) {
   return Number(product.price ?? product.unit_price ?? product.selling_price ?? product.amount) || 0;
 }
+function productUnit(product) {
+  return product.unit || product.measurement_unit || product.unit_label || product.price_unit || "";
+}
+
+function productPriceLabel(row) {
+  const price = productCurrency(row.price);
+  return row.unit ? `${price}/${row.unit}` : price;
+}
 
 function productStatus(stock) {
   if (stock <= 0) return "Out";
@@ -151,7 +159,7 @@ function productRenderProductCards() {
         <div class="product-card-head">
           <div>
             <h2>${productEscape(row.name)}</h2>
-            <div class="product-card-meta">${productCurrency(row.price)} · SKU ${productEscape(row.sku)}</div>
+            <div class="product-card-meta">${productEscape(productPriceLabel(row))} · SKU ${productEscape(row.sku)}</div>
           </div>
           <span class="badge ${productStatusBadge(row.status)}">${productEscape(row.status)}</span>
         </div>
@@ -190,7 +198,7 @@ function productRenderCatalogue() {
     <tr>
       <td>${productEscape(row.sku)}</td>
       <td>${productEscape(row.name)}</td>
-      <td>${productCurrency(row.price)}</td>
+      <td>${productEscape(productPriceLabel(row))}</td>
       <td>${row.stock.toLocaleString("en-IN")}</td>
       <td>${row.soldToday.toLocaleString("en-IN")}</td>
       <td><strong>${productCurrency(row.revenueToday)}</strong></td>
@@ -231,8 +239,8 @@ function productBuildRows(products, orders) {
     map.set(key, {
       name: catalogue?.name || existing?.name || name,
       sku: catalogue?.sku || existing?.sku || productSku(index, product),
-    
-      price: productPrice(product),
+      price: catalogue?.price ?? existing?.price ?? productPrice(product),
+      unit: catalogue?.unit || existing?.unit || productUnit(product),
       stock,
       soldToday: existing?.soldToday || 0,
       soldYesterday: existing?.soldYesterday || 0,
@@ -250,6 +258,7 @@ function productBuildRows(products, orders) {
         name,
         sku: `P-${String(map.size + 1).padStart(2, "0")}`,
         price: Number(item.price) || 0,
+        unit: "",
         stock: Number(item.stock ?? item.stock_units ?? item.available_units) || 0,
         soldToday: 0,
         soldYesterday: 0,
@@ -257,7 +266,7 @@ function productBuildRows(products, orders) {
         status: "Out"
       };
       const units = Number(item.packets) || Number(item.quantity) || 1;
-      const value = (Number(item.price) || row.price || 0) * units;
+      const value = (row.price || Number(item.price) || 0) * units;
       if (productIsToday(order.ordered_at || order.updated_at)) {
         row.soldToday += units;
         row.revenueToday += value;
