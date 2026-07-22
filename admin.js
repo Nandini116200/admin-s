@@ -9,6 +9,18 @@ const ADMIN_STATUS_OPTIONS = [
 const ADMIN_ALLOWED_EMAIL = "jfamown@gmail.com";
 const ADMIN_RESEND_SECONDS = 10;
 const ADMIN_DAILY_REVENUE_GOAL = 45000;
+const ADMIN_PRODUCT_CATALOGUE = [
+  "Raw Buffalo Milk",
+  "Raw Cow Milk",
+  "Raw A2 Cow Milk",
+  "Buffalo Bilona Chaach",
+  "Cow Bilona Chaach",
+  "Buffalo Ghee",
+  "Cow Ghee",
+  "Raw A2 Cow Ghee",
+  "Dahi",
+  "Paneer"
+];
 
 const adminState = {
   orders: [],
@@ -22,6 +34,7 @@ const adminState = {
 const adminEls = {
   loginPanel: document.getElementById("adminLoginPanel"),
   dashboard: document.getElementById("adminDashboard"),
+  greetingTitle: document.getElementById("adminGreetingTitle"),
   loginTitle: document.getElementById("adminLoginTitle"),
   loginCopy: document.getElementById("adminLoginCopy"),
   loginForm: document.getElementById("adminLoginForm"),
@@ -155,6 +168,21 @@ function adminToast(message) {
 function adminSetLoginStatus(message) {
   adminEls.loginStatus.textContent = message || "";
 }
+function adminUpdateGreeting() {
+  if (!adminEls.greetingTitle) return;
+
+  const hour = new Date().getHours();
+  let greeting = "morning";
+
+  if (hour >= 12 && hour < 17) {
+    greeting = "afternoon";
+  } else if (hour >= 17 || hour < 5) {
+    greeting = "evening";
+  }
+
+  adminEls.greetingTitle.textContent = `Good ${greeting}, founder`;
+}
+
 
 function adminMarkClicked(element) {
   if (!element) return;
@@ -333,6 +361,31 @@ function adminFilteredOrders() {
 
     return haystack.includes(query);
   });
+}
+function adminProductName(product, index) {
+  return product.name || product.product_name || product.title || product.label || `Product ${index + 1}`;
+}
+
+function adminUniqueProductCount() {
+  const names = new Set();
+
+  ADMIN_PRODUCT_CATALOGUE.forEach(product => {
+    names.add(product.trim().toLowerCase());
+  });
+
+  adminState.products.forEach((product, index) => {
+    const name = String(adminProductName(product, index)).trim().toLowerCase();
+    if (name) names.add(name);
+  });
+
+  adminState.orders.forEach(order => {
+    order.items.forEach(item => {
+      const name = String(item.name || "").trim().toLowerCase();
+      if (name) names.add(name);
+    });
+  });
+
+  return names.size;
 }
 
 function adminRenderStats() {
@@ -591,6 +644,7 @@ function adminStartRealtime() {
 async function adminShowDashboard() {
   adminEls.loginPanel.classList.add("hidden");
   adminEls.dashboard.classList.remove("hidden");
+  adminUpdateGreeting();
   await adminLoadOrders();
   adminStartRealtime();
 }
@@ -711,6 +765,7 @@ adminEls.list.addEventListener("change", event => {
 
 adminApplyLumiIcons();
 adminSetSidebarCollapsed(localStorage.getItem("jfamSidebarCollapsed") === "true");
+adminUpdateGreeting();
 
 adminGetSupabase().auth.getSession().then(({ data }) => {
   if (data?.session) {
