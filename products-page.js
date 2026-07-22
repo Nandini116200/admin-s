@@ -208,17 +208,35 @@ function productRender() {
 function productBuildRows(products, orders) {
   const map = new Map();
 
-  (products || []).forEach((product, index) => {
-    const name = product.name || product.product_name || product.title || `Product ${index + 1}`;
-    const stock = productStock(product);
-    map.set(productKey(name), {
-      name,
-      sku: productSku(index, product),
-      price: productPrice(product),
-      stock,
+  PRODUCT_CATALOGUE.forEach(product => {
+    map.set(productKey(product.name), {
+      name: product.name,
+      sku: product.sku,
+      price: product.price,
+      unit: product.unit,
+      stock: 0,
       soldToday: 0,
       soldYesterday: 0,
       revenueToday: 0,
+      status: productStatus(0)
+    });
+  });
+
+  (products || []).forEach((product, index) => {
+    const name = product.name || product.product_name || product.title || `Product ${index + 1}`;
+    const stock = productStock(product);
+    const key = productKey(name);
+    const existing = map.get(key);
+    const catalogue = productCatalogueItem(name);
+    map.set(key, {
+      name: catalogue?.name || existing?.name || name,
+      sku: catalogue?.sku || existing?.sku || productSku(index, product),
+    
+      price: productPrice(product),
+      stock,
+      soldToday: existing?.soldToday || 0,
+      soldYesterday: existing?.soldYesterday || 0,
+      revenueToday: existing?.revenueToday || 0,
       status: productStatus(stock)
     });
   });
@@ -256,7 +274,15 @@ function productBuildRows(products, orders) {
   return [...map.values()].map(row => ({
     ...row,
     status: productStatus(row.stock)
-  })).sort((a, b) => b.revenueToday - a.revenueToday || a.name.localeCompare(b.name));
+    })).sort((a, b) => {
+    const aIndex = productCatalogueIndex(a.name);
+    const bIndex = productCatalogueIndex(b.name);
+    if (aIndex !== -1 || bIndex !== -1) {
+      return (aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex) - (bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex);
+    }
+    return b.revenueToday - a.revenueToday || a.name.localeCompare(b.name);
+  });
+ 
 }
 
 async function productLoadData() {
