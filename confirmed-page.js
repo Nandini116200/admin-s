@@ -72,7 +72,7 @@ function confirmedNormalizeOrder(row) {
     userId: row.user_id,
     orderedAt: row.ordered_at,
     status: row.status || "Confirmed",
-    totalAmount: Number(row.total_amount) || 0,
+    totalAmount: window.JFAMPricing?.orderTotal(row) ?? Number(row.total_amount) ?? 0,
     customerName: profile.name || "Customer",
     customerMobile: profile.mobile || "",
     customerEmail: profile.email || "",

@@ -169,7 +169,7 @@ function customerBuildRows(orders, profilesById) {
     existing.email = profile.email || existing.email;
     existing.area = existing.area === "Area not stored" ? customerArea(profile, order) : existing.area;
     existing.orders += 1;
-    if (customerIsDelivered(order)) existing.ltv += Number(order.total_amount) || 0;
+    if (customerIsDelivered(order)) existing.ltv += window.JFAMPricing?.orderTotal(order) ?? Number(order.total_amount) ?? 0;
     if (customerIsCancelled(order)) existing.cancelledOrders += 1;
 
     const orderDate = customerDate(order.ordered_at);

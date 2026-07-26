@@ -7,6 +7,7 @@ const productIcons = {
 };
 
 let productRows = [];
+let productEditingKey = "";
 
 const PRODUCT_CATALOGUE = [
   { name: "Raw Buffalo Milk", sku: "P-01", price: 75, unit: "L" },
@@ -20,7 +21,6 @@ const PRODUCT_CATALOGUE = [
   { name: "Dahi", sku: "P-09", price: 72, unit: "500gm" },
   { name: "Paneer", sku: "P-10", price: 450, unit: "kg" }
 ];
-
 
 function productEscape(value) {
   return String(value ?? "")
@@ -77,18 +77,24 @@ function productCatalogueIndex(name) {
   return PRODUCT_CATALOGUE.findIndex(product => productKey(product.name) === key);
 }
 
+function productCatalogueItem(name) {
+  const key = productKey(name);
+  return PRODUCT_CATALOGUE.find(product => productKey(product.name) === key);
+}
+
 function productSku(index, product) {
   return product.sku || product.SKU || product.code || product.product_code || `P-${String(index + 1).padStart(2, "0")}`;
 }
 
 function productStock(product) {
-  const value = product.stock ?? product.stock_units ?? product.units_in_stock ?? product.inventory ?? product.quantity_available ?? product.available_units;
+  const value = product.stock_quantity ?? product.stock ?? product.stock_units ?? product.units_in_stock ?? product.inventory ?? product.quantity_available ?? product.available_units;
   return Math.max(0, Number(value) || 0);
 }
 
 function productPrice(product) {
-  return Number(product.price ?? product.unit_price ?? product.selling_price ?? product.amount) || 0;
+  return Number(product.default_price ?? product.one_time_price ?? product.price ?? product.unit_price ?? product.selling_price ?? product.amount) || 0;
 }
+
 function productUnit(product) {
   return product.unit || product.measurement_unit || product.unit_label || product.price_unit || "";
 }
@@ -98,10 +104,27 @@ function productPriceLabel(row) {
   return row.unit ? `${price}/${row.unit}` : price;
 }
 
-function productStatus(stock) {
+function productStatus(stock, lowStockLimit = 5) {
   if (stock <= 0) return "Out";
-  if (stock < 100) return "Low";
+  if (stock <= lowStockLimit) return "Low";
   return "In stock";
+}
+
+function productAvailabilityStatus(product, stock) {
+  if (product.is_available === false) return "Out";
+  return productStatus(stock, Number(product.low_stock_limit) || 5);
+}
+
+function productSetStatus(message, tone = "") {
+  const status = document.getElementById("productPageStatus");
+  if (!status) return;
+  status.textContent = message || "";
+  status.className = `product-page-status ${tone}`.trim();
+}
+
+function productDisplayPriceText(price, unit) {
+  const amount = Math.round(Number(price) || 0);
+  return unit ? `Rs. ${amount}/${unit}` : `Rs. ${amount}`;
 }
 
 function productStatusBadge(status) {
@@ -152,10 +175,12 @@ function productRenderProductCards() {
   }
 
   const maxStock = Math.max(...productRows.map(row => row.stock), 1);
-  grid.innerHTML = productRows.slice(0, 6).map(row => {
+  grid.innerHTML = productRows.map(row => {
     const width = Math.min(Math.round((row.stock / maxStock) * 100), 100);
+    const rowKey = productKey(row.name);
+    const isEditing = productEditingKey === rowKey;
     return `
-      <article class="product-card">
+      <article class="product-card ${isEditing ? "is-editing" : ""}" data-product-card="${productEscape(row.name)}">
         <div class="product-card-head">
           <div>
             <h2>${productEscape(row.name)}</h2>
@@ -180,6 +205,20 @@ function productRenderProductCards() {
             <strong>${productCurrency(row.revenueToday)}</strong>
           </div>
         </div>
+        <form class="product-edit-form" data-product-form="${productEscape(row.name)}">
+          <label>
+            <span>Stock</span>
+            <input type="number" min="0" step="1" name="stock_quantity" value="${productEscape(row.stock)}">
+          </label>
+          <label>
+            <span>Price</span>
+            <input type="number" min="0" step="1" name="default_price" value="${productEscape(row.price)}">
+          </label>
+          <div class="product-edit-actions">
+            <button type="submit">Save</button>
+            <button type="button" class="secondary-product-btn" data-mark-out="${productEscape(row.name)}">Mark out</button>
+          </div>
+        </form>
       </article>
     `;
   }).join("");
@@ -202,7 +241,10 @@ function productRenderCatalogue() {
       <td>${row.stock.toLocaleString("en-IN")}</td>
       <td>${row.soldToday.toLocaleString("en-IN")}</td>
       <td><strong>${productCurrency(row.revenueToday)}</strong></td>
-      <td><span class="badge ${productStatusBadge(row.status)}">${productEscape(row.status)}</span></td>
+      <td>
+        <span class="badge ${productStatusBadge(row.status)}">${productEscape(row.status)}</span>
+        ${row.availabilityMessage ? `<br><span class="product-table-note">${productEscape(row.availabilityMessage)}</span>` : ""}
+      </td>
     </tr>
   `).join("");
 }
@@ -223,6 +265,8 @@ function productBuildRows(products, orders) {
       price: product.price,
       unit: product.unit,
       stock: 0,
+      isAvailable: false,
+      availabilityMessage: "Out of stock",
       soldToday: 0,
       soldYesterday: 0,
       revenueToday: 0,
@@ -239,13 +283,16 @@ function productBuildRows(products, orders) {
     map.set(key, {
       name: catalogue?.name || existing?.name || name,
       sku: catalogue?.sku || existing?.sku || productSku(index, product),
-      price: catalogue?.price ?? existing?.price ?? productPrice(product),
+      price: productPrice(product) || catalogue?.price || existing?.price || 0,
       unit: catalogue?.unit || existing?.unit || productUnit(product),
       stock,
+      isAvailable: product.is_available !== false,
+      availabilityMessage: product.availability_message || "",
+      displayPriceText: product.display_price_text || "",
       soldToday: existing?.soldToday || 0,
       soldYesterday: existing?.soldYesterday || 0,
       revenueToday: existing?.revenueToday || 0,
-      status: productStatus(stock)
+      status: productAvailabilityStatus(product, stock)
     });
   });
 
@@ -282,8 +329,8 @@ function productBuildRows(products, orders) {
 
   return [...map.values()].map(row => ({
     ...row,
-    status: productStatus(row.stock)
-    })).sort((a, b) => {
+    status: row.status || productStatus(row.stock)
+  })).sort((a, b) => {
     const aIndex = productCatalogueIndex(a.name);
     const bIndex = productCatalogueIndex(b.name);
     if (aIndex !== -1 || bIndex !== -1) {
@@ -291,7 +338,6 @@ function productBuildRows(products, orders) {
     }
     return b.revenueToday - a.revenueToday || a.name.localeCompare(b.name);
   });
- 
 }
 
 async function productLoadData() {
@@ -308,7 +354,7 @@ async function productLoadData() {
   let products = [];
   try {
     const { data: productData, error: productError } = await sb
-      .from("products")
+      .from("product_catalog")
       .select("*");
     if (!productError) products = productData || [];
   } catch (error) {
@@ -317,6 +363,62 @@ async function productLoadData() {
 
   productRows = productBuildRows(products, orders || []);
   productRender();
+}
+
+async function productSaveForm(form) {
+  const sb = window.supabaseClient;
+  const productName = form.dataset.productForm;
+  const row = productRows.find(product => productKey(product.name) === productKey(productName));
+  if (!sb || !row) return;
+
+  const button = form.querySelector("button[type='submit']");
+  const stock = Math.max(0, Number(form.elements.stock_quantity.value) || 0);
+  const price = Math.max(0, Number(form.elements.default_price.value) || 0);
+  const isAvailable = stock > 0;
+  const message = isAvailable ? "Available" : "Out of stock";
+  const unit = row.unit || "L";
+
+  if (button) button.disabled = true;
+  productSetStatus(`Saving ${row.name}...`);
+
+  const { data, error } = await sb
+    .from("product_catalog")
+    .update({
+      stock_quantity: stock,
+      default_price: price,
+      is_available: isAvailable,
+      availability_message: message,
+      display_price_text: productDisplayPriceText(price, unit),
+      updated_at: new Date().toISOString()
+    })
+    .ilike("product_name", row.name)
+    .select("product_name")
+    .maybeSingle();
+
+  if (button) button.disabled = false;
+
+  if (error) {
+    console.log(error);
+    productSetStatus(`Could not save ${row.name}. Check product_catalog policy/row.`, "error");
+    return;
+  }
+
+  if (!data?.product_name) {
+    productSetStatus(`${row.name} row was not found in product_catalog.`, "error");
+    return;
+  }
+
+  productSetStatus(`${row.name} updated. Customer app will reflect this live.`, "success");
+  productEditingKey = "";
+  await productLoadData();
+}
+
+async function productMarkOut(productName) {
+  const form = document.querySelector(`[data-product-form="${CSS.escape(productName)}"]`);
+  if (!form) return;
+
+  form.elements.stock_quantity.value = 0;
+  await productSaveForm(form);
 }
 
 function productBuildPage(app) {
@@ -361,7 +463,10 @@ function productBuildPage(app) {
       <section class="products-grid" id="productsGrid" aria-label="Product stock cards"></section>
 
       <section class="products-panel">
-        <h2>Catalogue</h2>
+        <div class="products-panel-head">
+          <h2>Catalogue</h2>
+          <p class="product-page-status" id="productPageStatus">Live stock controls are connected to product_catalog.</p>
+        </div>
         <div class="products-table-wrap">
           <table class="products-table">
             <thead>
@@ -383,6 +488,33 @@ function productBuildPage(app) {
   `;
 
   productRenderIcons();
+  app.addEventListener("submit", event => {
+    const form = event.target.closest("[data-product-form]");
+    if (!form) return;
+    event.preventDefault();
+    productSaveForm(form);
+  });
+  app.addEventListener("click", event => {
+    const button = event.target.closest("[data-mark-out]");
+    if (!button) return;
+    productMarkOut(button.dataset.markOut);
+  });
+  app.addEventListener("click", event => {
+    if (event.target.closest("input, button, form")) return;
+    const card = event.target.closest("[data-product-card]");
+    if (!card) return;
+
+    const nextKey = productKey(card.dataset.productCard);
+    productEditingKey = productEditingKey === nextKey ? "" : nextKey;
+    productRenderProductCards();
+
+    if (productEditingKey) {
+      const input = document
+        .querySelector(`[data-product-form="${CSS.escape(card.dataset.productCard)}"] input[name="stock_quantity"]`);
+      input?.focus();
+      input?.select?.();
+    }
+  });
 }
 
 AdminPages.mount({
@@ -401,6 +533,6 @@ AdminPages.mount({
     ?.channel("jfam-products")
     .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => productLoadData())
     .on("postgres_changes", { event: "*", schema: "public", table: "order_items" }, () => productLoadData())
-    .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => productLoadData())
+    .on("postgres_changes", { event: "*", schema: "public", table: "product_catalog" }, () => productLoadData())
     .subscribe();
 });

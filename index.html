@@ -8,7 +8,7 @@
 </head>
 <body>
   <main class="admin-shell">
-    <section class="admin-login" id="adminLoginPanel">
+    <section class="admin-login hidden" id="adminLoginPanel">
       <div>
         <p class="eyebrow">Admin access</p>
         <h1 id="adminLoginTitle">JFAM Orders</h1>
@@ -50,7 +50,7 @@
 
         <nav class="side-nav">
           <p>Overview</p>
-          <a class="active" href="index.html" data-nav-key="dashboard"><span>📊</span> Dashboard</a>
+          <a class="active" href="index.html" data-nav-key="dashboard" aria-current="page"><span>📊</span> Dashboard</a>
           <a href="Kpis.html" data-nav-key="kpis"><span>⏳</span> KPIs</a>
         
           <p>Today</p>
@@ -63,6 +63,7 @@
           <a href="Delivery.html" data-nav-key="delivery"><span>🚛</span> Delivery Partners</a>
           <a href="Customers.html" data-nav-key="customers"><span>👥</span> Customers</a>
           <a href="Products.html" data-nav-key="products"><span>📥</span> Products</a>
+          <a href="Database.html" data-nav-key="database"><span>DB</span> Tables</a>
         </nav>
       </aside>
 
@@ -133,7 +134,7 @@
             <span class="target-label">TODAY'S REVENUE TARGET</span>
             <div class="target-amount">
               <strong id="targetRevenueValue">&#8377;0</strong>
-              <span>/ <span id="targetRevenueGoal">&#8377;45,000</span></span>
+              <span>/ &#8377;<input type="number" id="targetRevenueInput" class="target-goal-input" min="1" step="100" value="45000" aria-label="Today's revenue target"></span>
             </div>
             <div class="target-progress-track" aria-hidden="true">
               <span id="targetProgressFill" class="target-progress-fill"></span>
@@ -223,26 +224,13 @@
           </div>
         </section>
 
-        <section class="orders-toolbar" aria-label="Order filters">
-          <input type="search" id="orderSearchInput" placeholder="Search orders, customer, mobile">
-          <select id="orderStatusFilter" aria-label="Filter by status">
-            <option value="">All statuses</option>
-            <option value="Confirmed">Confirmed</option>
-            <option value="Preparing">Preparing</option>
-            <option value="Out for Delivery">Out for Delivery</option>
-            <option value="Delivered">Delivered</option>
-            <option value="Cancelled">Cancelled</option>
-          </select>
-        </section>
-
-        <section id="ordersList" class="orders-list"></section>
       </div>
 
       <nav class="bottom-nav" aria-label="Primary admin navigation">
-        <a class="active" href="index.html"><span>▦</span> Dashboard</a>
-        <a href="Orders.html"><span>✓</span> Orders</a>
-        <a href="Revenue.html"><span>₹</span> Revenue</a>
-        <a href="Products.html"><span>☰</span> Products</a>
+        <a class="active" href="index.html" data-nav-key="dashboard" aria-current="page"><span>▦</span> Dashboard</a>
+        <a href="Orders.html" data-nav-key="delivered"><span>✓</span> Orders</a>
+        <a href="Revenue.html" data-nav-key="revenue"><span>₹</span> Revenue</a>
+        <a href="Products.html" data-nav-key="products"><span>☰</span> Products</a>
       </nav>
     </section>
   </main>
@@ -251,6 +239,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./Supabase.js"></script>
+  <script src="./product-pricing.js"></script>
   <script src="./admin.js"></script>
 </body>
 </html>

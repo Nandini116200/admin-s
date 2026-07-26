@@ -8,8 +8,25 @@ const PAGE_ICONS = {
   subscriptions: '<svg class="lumi-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3l3 3-3 3"/><path d="M4 11V8a2 2 0 0 1 2-2h14"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v3a2 2 0 0 1-2 2H4"/></svg>',
   delivery: '<svg class="lumi-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10v9H4zM14 10h4l3 3v3h-7z"/><path d="M8 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>',
   customers: '<svg class="lumi-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0"/><path d="M17 11a3 3 0 1 0 0-6M22 21a6 6 0 0 0-5-6"/></svg>',
-  products: '<svg class="lumi-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7l8-4 8 4-8 4z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg>'
+  products: '<svg class="lumi-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7l8-4 8 4-8 4z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg>',
+  database: '<svg class="lumi-icon" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 12v7c0 1.7 3.1 3 7 3s7-1.3 7-3v-7"/></svg>',
+  more: '<svg class="lumi-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>'
 };
+
+const PAGE_NAV_ITEMS = [
+  { key: "dashboard", href: "index.html", label: "Dashboard", shortLabel: "Dashboard", group: "Overview" },
+  { key: "kpis", href: "Kpis.html", label: "KPIs", group: "Overview" },
+  { key: "confirmed", href: "Confirmed.html", label: "Orders Confirmed", group: "Today" },
+  { key: "delivered", href: "Orders.html", label: "Orders Delivered", shortLabel: "Orders", group: "Today" },
+  { key: "revenue", href: "Revenue.html", label: "Revenue", shortLabel: "Revenue", group: "Today" },
+  { key: "subscriptions", href: "Subscriptions.html", label: "Subscriptions", group: "Manage" },
+  { key: "delivery", href: "Delivery.html", label: "Delivery Partners", group: "Manage" },
+  { key: "customers", href: "Customers.html", label: "Customers", group: "Manage" },
+  { key: "products", href: "Products.html", label: "Products", shortLabel: "Products", group: "Manage" },
+  { key: "database", href: "Database.html", label: "Tables", group: "Manage" }
+];
+
+const PAGE_BOTTOM_NAV_KEYS = ["dashboard", "delivered", "revenue", "products"];
 
 function pageSetSidebarCollapsed(isCollapsed) {
   const dashboard = document.getElementById("adminDashboard");
@@ -27,8 +44,78 @@ function pageApplyIcons(activeKey) {
     if (icon) icon.innerHTML = PAGE_ICONS[link.dataset.navKey] || PAGE_ICONS.dashboard;
   });
 
+  document.querySelectorAll("[data-more-icon]").forEach(icon => {
+    icon.innerHTML = PAGE_ICONS.more;
+  });
+
   const toggleIcon = document.querySelector("#sidebarToggleBtn span");
   if (toggleIcon) toggleIcon.innerHTML = PAGE_ICONS.menu;
+}
+
+function pageNavLinks(keys, extraClass = "") {
+  return keys.map(key => {
+    const item = PAGE_NAV_ITEMS.find(navItem => navItem.key === key);
+    if (!item) return "";
+    return `<a class="${extraClass}" href="${item.href}" data-nav-key="${item.key}"><span></span> ${item.shortLabel || item.label}</a>`;
+  }).join("");
+}
+
+function pageMoreNavMarkup(activeKey) {
+  const drawerLinks = PAGE_NAV_ITEMS.map(item => `
+    <a href="${item.href}" data-nav-key="${item.key}">
+      <span></span>
+      <small>${item.group}</small>
+      <b>${item.label}</b>
+    </a>
+  `).join("");
+
+  return `
+    <button type="button" class="bottom-more-btn" id="mobileMoreBtn" aria-expanded="false" aria-controls="mobileMorePanel">
+      <span data-more-icon aria-hidden="true"></span>
+      More
+    </button>
+    <div class="mobile-more-backdrop" id="mobileMoreBackdrop" hidden></div>
+    <section class="mobile-more-panel" id="mobileMorePanel" aria-label="All admin pages" hidden>
+      <div class="mobile-more-head">
+        <strong>All pages</strong>
+        <button type="button" id="mobileMoreClose" aria-label="Close menu">Close</button>
+      </div>
+      <nav class="mobile-more-grid">
+        ${drawerLinks}
+      </nav>
+    </section>
+  `;
+}
+
+function pageSetupMobileMore(activeKey) {
+  const bottomNav = document.querySelector(".bottom-nav");
+  if (!bottomNav) return;
+
+  if (!document.getElementById("mobileMoreBtn")) {
+    bottomNav.insertAdjacentHTML("beforeend", pageMoreNavMarkup(activeKey));
+  }
+
+  const button = document.getElementById("mobileMoreBtn");
+  const panel = document.getElementById("mobileMorePanel");
+  const backdrop = document.getElementById("mobileMoreBackdrop");
+  const close = document.getElementById("mobileMoreClose");
+  button?.classList.toggle("active", !PAGE_BOTTOM_NAV_KEYS.includes(activeKey));
+
+  const setOpen = isOpen => {
+    document.body.classList.toggle("mobile-more-open", isOpen);
+    button?.setAttribute("aria-expanded", String(isOpen));
+    if (panel) panel.hidden = !isOpen;
+    if (backdrop) backdrop.hidden = !isOpen;
+  };
+
+  button?.addEventListener("click", () => setOpen(button.getAttribute("aria-expanded") !== "true"));
+  close?.addEventListener("click", () => setOpen(false));
+  backdrop?.addEventListener("click", () => setOpen(false));
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") setOpen(false);
+  });
+
+  pageApplyIcons(activeKey);
 }
 
 function pageBuildShell(config) {
@@ -59,6 +146,7 @@ function pageBuildShell(config) {
             <a href="Delivery.html" data-nav-key="delivery"><span></span> Delivery Partners</a>
             <a href="Customers.html" data-nav-key="customers"><span></span> Customers</a>
             <a href="Products.html" data-nav-key="products"><span></span> Products</a>
+            <a href="Database.html" data-nav-key="database"><span></span> Tables</a>
           </nav>
         </aside>
         <div class="admin-content">
@@ -80,10 +168,7 @@ function pageBuildShell(config) {
           <div id="pageApp"></div>
         </div>
         <nav class="bottom-nav" aria-label="Primary admin navigation">
-          <a href="index.html" data-nav-key="dashboard"><span></span> Dashboard</a>
-          <a href="Orders.html" data-nav-key="delivered"><span></span> Orders</a>
-          <a href="Revenue.html" data-nav-key="revenue"><span></span> Revenue</a>
-          <a href="Products.html" data-nav-key="products"><span></span> Products</a>
+          ${pageNavLinks(PAGE_BOTTOM_NAV_KEYS)}
         </nav>
       </section>
     </main>
@@ -93,6 +178,7 @@ function pageBuildShell(config) {
   document.getElementById("pageTitle").textContent = config.title;
   document.getElementById("pageCopy").textContent = config.copy;
   pageApplyIcons(config.key);
+  pageSetupMobileMore(config.key);
 
   document.getElementById("sidebarToggleBtn")?.addEventListener("click", () => {
     const dashboard = document.getElementById("adminDashboard");
@@ -149,7 +235,28 @@ function pageTable(headers, rows) {
 }
 
 window.AdminPages = {
-  mount(config, render) {
+  async mount(config, render) {
+    const sb = window.supabaseClient;
+    const { data: sessionResult } = await sb.auth.getSession();
+    const session = sessionResult?.session;
+
+    if (!session) {
+      window.location.href = "index.html";
+      return;
+    }
+
+    const { data: adminRow, error } = await sb
+      .from("admin_users")
+      .select("user_id")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+
+    if (error || !adminRow?.user_id) {
+      await sb.auth.signOut();
+      window.location.href = "index.html";
+      return;
+    }
+
     pageBuildShell(config);
     const app = document.getElementById("pageApp");
     if (!app) return;

@@ -143,6 +143,7 @@
     }
 
     .revenue-split-grid {
+      align-items: start;
       display: grid;
       gap: 18px;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -184,34 +185,64 @@
 
     .revenue-area-list {
       display: grid;
-      gap: 16px;
+      align-content: start;
+      gap: 10px;
       min-width: 0;
+    }
+
+    .revenue-area-summary {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-bottom: 4px;
+      min-width: 0;
+    }
+
+    .revenue-area-summary article {
+      background: #f5efe6;
+      border-radius: 12px;
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+      padding: 12px;
+    }
+
+    .revenue-area-summary span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .revenue-area-summary strong {
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 20px;
+      line-height: 1.05;
+      overflow-wrap: anywhere;
     }
 
     .revenue-area-row {
+      align-items: center;
       display: grid;
-      gap: 8px;
+      gap: 12px;
+      grid-template-columns: minmax(110px, 1fr) minmax(120px, 1.4fr) minmax(84px, auto);
       min-width: 0;
+      padding: 8px 0;
     }
 
     .revenue-area-top {
-      align-items: baseline;
-      display: grid;
-      gap: 10px;
-      grid-template-columns: minmax(0, 1fr) auto;
-      min-width: 0;
-    }
-
-    .revenue-area-top span,
-    .revenue-area-top strong {
-      overflow-wrap: anywhere;
+      display: contents;
     }
 
     .revenue-area-track {
       background: #f2d9ce;
       border-radius: 999px;
       height: 10px;
+      min-width: 0;
       overflow: hidden;
+      width: 100%;
     }
 
     .revenue-area-fill {
@@ -220,6 +251,48 @@
       display: block;
       height: 100%;
       width: var(--area-width, 0%);
+    }
+
+    .revenue-area-top span {
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.25;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .revenue-area-top strong {
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+      line-height: 1.1;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .revenue-area-empty {
+      background: #f5efe6;
+      border: 1px dashed rgba(87, 51, 26, 0.18);
+      border-radius: 14px;
+      color: var(--muted);
+      line-height: 1.45;
+      margin: 0;
+      padding: 18px;
+    }
+
+    @media (max-width: 520px) {
+      .revenue-area-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .revenue-area-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .revenue-area-track {
+        grid-column: 1 / -1;
+      }
     }
 
     .revenue-table-wrap {
@@ -252,6 +325,15 @@
       overflow-wrap: anywhere;
     }
 
+    .revenue-table th:nth-child(2),
+    .revenue-table td:nth-child(2),
+    .revenue-table th:nth-child(3),
+    .revenue-table td:nth-child(3),
+    .revenue-table th:nth-child(4),
+    .revenue-table td:nth-child(4) {
+      text-align: right;
+    }
+
     @media (max-width: 980px) {
       .revenue-split-grid {
         grid-template-columns: 1fr;
@@ -271,6 +353,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./Supabase.js"></script>
+  <script src="./product-pricing.js"></script>
   <script src="./admin-pages.js"></script>
   <script src="./revenue-page.js"></script>
 </body>

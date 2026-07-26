@@ -1,4 +1,5 @@
-const REVENUE_TARGET = 45000;
+const REVENUE_TARGET_STORAGE_KEY = "jfamDailyRevenueTarget";
+const DEFAULT_REVENUE_TARGET = 45000;
 
 const revenueIcons = {
   revenue: '<svg class="lumi-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h10M7 9h10M9 5c4 0 6 2 6 5s-2 5-6 5l6 4"/></svg>',
@@ -28,6 +29,11 @@ function revenueCurrencyShort(value) {
   if (number >= 100000) return `Rs. ${Math.round(number / 1000)}k`;
   if (number >= 1000) return `Rs. ${Math.round(number / 1000)}k`;
   return `Rs. ${number}`;
+}
+
+function revenueGetTarget() {
+  const saved = Number(localStorage.getItem(REVENUE_TARGET_STORAGE_KEY));
+  return saved > 0 ? saved : DEFAULT_REVENUE_TARGET;
 }
 
 function revenueDate(value) {
@@ -65,7 +71,7 @@ function revenueInLastDays(order, days) {
 }
 
 function revenueItemValue(item) {
-  return (Number(item.price) || 0) * (Number(item.packets) || 1);
+  return window.JFAMPricing?.lineTotal(item) ?? ((Number(item.price) || 0) * (Number(item.packets) || 1));
 }
 
 function revenueCategory(name) {
@@ -83,19 +89,21 @@ function revenueArea(order) {
 
 function revenueNormalizeOrder(row) {
   const profile = row.profile || {};
+  const items = (Array.isArray(row.order_items) ? row.order_items : []).map(item => ({
+    name: item.product_name || "Other",
+    price: window.JFAMPricing?.price(item.product_name, item.price) ?? Number(item.price) ?? 0,
+    packets: Number(item.packets) || 1
+  }));
+
   return {
     id: row.id,
     userId: row.user_id,
     orderedAt: row.ordered_at,
     updatedAt: row.updated_at,
     status: row.status || "Confirmed",
-    totalAmount: Number(row.total_amount) || 0,
+    totalAmount: window.JFAMPricing?.orderTotal({ ...row, items }) ?? Number(row.total_amount) ?? 0,
     area: row.area || row.address_area || row.delivery_area || row.shipping_area || row.locality || row.city || row.pincode || profile.area || profile.address_area || profile.delivery_area || profile.locality || profile.city || profile.pincode || profile.address || "Area not stored",
-    items: (Array.isArray(row.order_items) ? row.order_items : []).map(item => ({
-      name: item.product_name || "Other",
-      price: Number(item.price) || 0,
-      packets: Number(item.packets) || 1
-    }))
+    items
   };
 }
 
@@ -147,12 +155,28 @@ function revenueDailyDelivered(offset) {
 }
 
 function revenueWeeklySeries() {
+  const today = revenueStartOfDay();
+  const monday = new Date(today);
+  const day = monday.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  monday.setDate(today.getDate() + mondayOffset);
+
   return Array.from({ length: 7 }, (_, index) => {
-    const offset = index - 6;
-    const date = revenueStartOfDay(offset);
-    const orders = revenueDailyDelivered(offset);
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + index);
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999);
+    const orders = revenueDeliveredOrders().filter(order => {
+      const orderDate = revenueOrderDate(order);
+      return Boolean(orderDate && orderDate >= date && orderDate <= end);
+    });
+
     return {
-      label: date.toLocaleDateString("en-IN", { weekday: "short" }),
+      label: date.toLocaleDateString("en-IN", {
+        weekday: "short",
+        day: "2-digit",
+        month: "short"
+      }),
       revenue: revenueSum(orders),
       orders: orders.length
     };
@@ -173,11 +197,12 @@ function revenueRenderCards() {
   const previousWeekRevenue = revenueSum(previousWeekOrders);
   const avgOrder = todayOrders.length ? todayRevenue / todayOrders.length : 0;
   const yesterdayAvg = yesterdayOrders.length ? yesterdayRevenue / yesterdayOrders.length : 0;
-  const targetProgress = Math.min(Math.round((todayRevenue / REVENUE_TARGET) * 100), 100);
-  const toGo = Math.max(REVENUE_TARGET - todayRevenue, 0);
+  const revenueTarget = revenueGetTarget();
+  const targetProgress = Math.min(Math.round((todayRevenue / revenueTarget) * 100), 100);
+  const toGo = Math.max(revenueTarget - todayRevenue, 0);
 
   revenueSetText("revenueDeliveredValue", revenueCurrency(todayRevenue));
-  revenueSetText("revenueDeliveredDetail", `${targetProgress}% of ${revenueCurrency(REVENUE_TARGET)} target`);
+  revenueSetText("revenueDeliveredDetail", `${targetProgress}% of ${revenueCurrency(revenueTarget)} target`);
   revenueSetText("avgOrderValue", revenueCurrency(avgOrder));
   revenueSetText("weeklyRevenueValue", revenueCurrency(weeklyRevenue));
   revenueSetText("targetProgressValue", `${targetProgress}%`);
@@ -272,15 +297,42 @@ function revenueRenderAreaList() {
     const area = revenueArea(order);
     totals.set(area, (totals.get(area) || 0) + order.totalAmount);
   });
-  const rows = [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const rows = [...totals.entries()]
+    .filter(([, value]) => Number(value) > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
+  const totalRevenue = rows.reduce((sum, [, value]) => sum + value, 0);
   const max = Math.max(...rows.map(([, value]) => value), 1);
 
   if (!rows.length) {
-    list.innerHTML = '<p class="page-note">No delivered area revenue stored yet.</p>';
+    list.innerHTML = `
+      <p class="revenue-area-empty">
+        Area revenue will appear after delivered orders have a stored area and amount.
+      </p>
+    `;
     return;
   }
 
-  list.innerHTML = rows.map(([area, value]) => {
+  const topArea = rows[0];
+  const topShare = totalRevenue ? Math.round((topArea[1] / totalRevenue) * 100) : 0;
+  const summaryHtml = `
+    <div class="revenue-area-summary">
+      <article>
+        <span>Area revenue</span>
+        <strong>${revenueCurrency(totalRevenue)}</strong>
+      </article>
+      <article>
+        <span>Areas</span>
+        <strong>${rows.length.toLocaleString("en-IN")}</strong>
+      </article>
+      <article>
+        <span>Top share</span>
+        <strong>${topShare}%</strong>
+      </article>
+    </div>
+  `;
+
+  const rowsHtml = rows.map(([area, value]) => {
     const percent = Math.round((value / max) * 100);
     return `
       <div class="revenue-area-row">
@@ -294,6 +346,8 @@ function revenueRenderAreaList() {
       </div>
     `;
   }).join("");
+
+  list.innerHTML = summaryHtml + rowsHtml;
 }
 
 function revenueRenderDailyTable() {
@@ -471,4 +525,8 @@ AdminPages.mount({
     .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => revenueLoadOrders())
     .on("postgres_changes", { event: "*", schema: "public", table: "order_items" }, () => revenueLoadOrders())
     .subscribe();
+
+  window.addEventListener("storage", event => {
+    if (event.key === REVENUE_TARGET_STORAGE_KEY) revenueRender();
+  });
 });

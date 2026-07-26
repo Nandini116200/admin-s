@@ -45,7 +45,7 @@ function deliveredTodayEnd() {
 }
 
 function deliveredIsToday(order) {
-  const date = deliveredDate(order.orderedAt);
+  const date = deliveredDate(order.statusAt);
   return Boolean(date && date >= deliveredTodayStart() && date <= deliveredTodayEnd());
 }
 
@@ -81,9 +81,11 @@ function deliveredNormalizeOrder(row) {
     id: row.id,
     userId: row.user_id,
     orderedAt: row.updated_at || row.ordered_at,
+    updatedAt: row.updated_at,
     originalOrderedAt: row.ordered_at,
     status: row.status || "Confirmed",
-    totalAmount: Number(row.total_amount) || 0,
+    statusAt: deliveredStatusKey(row.status) === "delivered" ? row.updated_at || row.ordered_at : row.ordered_at,
+    totalAmount: window.JFAMPricing?.orderTotal(row) ?? Number(row.total_amount) ?? 0,
     customerName: profile.name || "Customer",
     customerMobile: profile.mobile || "",
     area: row.area || row.address_area || row.delivery_area || row.shipping_area || row.locality || row.city || row.pincode || profile.area || profile.address_area || profile.delivery_area || profile.locality || profile.city || profile.pincode || profile.address || "Area not stored",
@@ -99,17 +101,7 @@ function deliveredNormalizeOrder(row) {
 function deliveredTodaysOrders() {
   return deliveredOrders
     .filter(deliveredIsToday)
-    .sort((a, b) => new Date(b.orderedAt) - new Date(a.orderedAt));
-}
-
-function deliveredOrdersUpToNow() {
-  const now = new Date();
-  return deliveredOrders
-    .filter(order => {
-      const date = deliveredDate(order.orderedAt);
-      return Boolean(date && date <= now);
-    })
-    .sort((a, b) => new Date(b.orderedAt) - new Date(a.orderedAt));
+    .sort((a, b) => new Date(b.statusAt) - new Date(a.statusAt));
 }
 
 function deliveredCounts(orders) {
@@ -136,8 +128,8 @@ function deliveredSetText(id, value) {
 function deliveredRenderStats(orders) {
   const counts = deliveredCounts(orders);
   const activeTotal = counts.delivered + counts.out + counts.pending + counts.failed;
-  const confirmedTotal = Math.max(activeTotal, 1);
-  const completion = Math.round((counts.delivered / confirmedTotal) * 100);
+  const confirmedTotal = activeTotal;
+  const completion = confirmedTotal > 0 ? Math.round((counts.delivered / confirmedTotal) * 100) : 0;
   const revenue = orders
     .filter(order => deliveredStatusKey(order.status) === "delivered")
     .reduce((sum, order) => sum + order.totalAmount, 0);
@@ -146,7 +138,11 @@ function deliveredRenderStats(orders) {
   deliveredSetText("outCount", counts.out.toLocaleString("en-IN"));
   deliveredSetText("pendingCount", counts.pending.toLocaleString("en-IN"));
   deliveredSetText("failedCount", counts.failed.toLocaleString("en-IN"));
-  deliveredSetText("deliveredDetail", `${completion}% of confirmed`);
+  deliveredSetText("legendDeliveredCount", counts.delivered.toLocaleString("en-IN"));
+  deliveredSetText("legendOutCount", counts.out.toLocaleString("en-IN"));
+  deliveredSetText("legendPendingCount", counts.pending.toLocaleString("en-IN"));
+  deliveredSetText("legendFailedCount", counts.failed.toLocaleString("en-IN"));
+  deliveredSetText("deliveredDetail", `${completion}% of today's active orders`);
   deliveredSetText("outDetail", "On partner routes now");
   deliveredSetText("pendingDetail", "Still to leave the hub");
   deliveredSetText("failedDetail", "Need rescheduling");
@@ -155,14 +151,17 @@ function deliveredRenderStats(orders) {
 
   const donut = document.getElementById("statusDonut");
   if (donut) {
-    const deliveredEnd = (counts.delivered / confirmedTotal) * 100;
-    const outEnd = deliveredEnd + (counts.out / confirmedTotal) * 100;
-    const pendingEnd = outEnd + (counts.pending / confirmedTotal) * 100;
+    donut.classList.toggle("is-empty", activeTotal === 0);
+    const donutBase = Math.max(confirmedTotal, 1);
+    const deliveredEnd = (counts.delivered / donutBase) * 100;
+    const outEnd = deliveredEnd + (counts.out / donutBase) * 100;
+    const pendingEnd = outEnd + (counts.pending / donutBase) * 100;
     const failedEnd = 100;
     donut.style.setProperty("--delivered-end", `${deliveredEnd}%`);
     donut.style.setProperty("--out-end", `${outEnd}%`);
     donut.style.setProperty("--pending-end", `${pendingEnd}%`);
     donut.style.setProperty("--failed-end", `${failedEnd}%`);
+    donut.style.setProperty("--failed-color", activeTotal > 0 ? "#c8483b" : "#e6eef0");
   }
 
   const progress = document.getElementById("completionFill");
@@ -185,7 +184,7 @@ function deliveredRenderLineChart(orders) {
   let cumulative = 0;
   const values = hours.map(hour => {
     cumulative += orders.filter(order => {
-      const date = deliveredDate(order.orderedAt);
+      const date = deliveredDate(order.statusAt);
       return deliveredStatusKey(order.status) === "delivered" && date && date.getHours() === hour;
     }).length;
     return cumulative;
@@ -237,7 +236,7 @@ function deliveredRenderLog(orders) {
     return `
       <tr>
         <td>${deliveredEscape(order.id)}</td>
-        <td>${deliveredEscape(deliveredTime(order.orderedAt))}</td>
+        <td>${deliveredEscape(deliveredTime(order.statusAt))}</td>
         <td>${deliveredEscape(order.customerName)}${order.customerMobile ? `<br><span class="page-note">${deliveredEscape(order.customerMobile)}</span>` : ""}</td>
         <td>${deliveredEscape(order.area)}</td>
         <td>${deliveredEscape(order.partner)}</td>
@@ -252,7 +251,7 @@ function deliveredRender() {
   const orders = deliveredTodaysOrders();
   deliveredRenderStats(orders);
   deliveredRenderLineChart(orders);
-  deliveredRenderLog(deliveredOrdersUpToNow());
+  deliveredRenderLog(orders);
 }
 
 async function deliveredLoadOrders() {
@@ -297,7 +296,7 @@ function deliveredBuildPage(app) {
             <span class="stat-icon" data-delivered-icon="delivered" aria-hidden="true"></span>
           </div>
           <strong id="deliveredCount">0</strong>
-          <span class="stat-detail" id="deliveredDetail">0% of confirmed</span>
+          <span class="stat-detail" id="deliveredDetail">0% of today's active orders</span>
           <span class="stat-trend"><span class="trend-icon" aria-hidden="true"></span><span>Live from Supabase</span></span>
         </article>
         <article class="stat-card">
@@ -341,24 +340,6 @@ function deliveredBuildPage(app) {
           </div>
         </article>
 
-        <article class="delivered-panel">
-          <div class="delivered-section-head">
-            <h2>Status breakdown</h2>
-          </div>
-          <div class="delivered-donut-wrap">
-            <div class="delivered-donut" id="statusDonut" aria-hidden="true"></div>
-            <div class="delivered-completion">
-              <div class="delivered-completion-top">
-                <span>Completion</span>
-                <strong id="completionValue">0%</strong>
-              </div>
-              <div class="delivered-progress-track" aria-hidden="true">
-                <span class="delivered-progress-fill" id="completionFill"></span>
-              </div>
-              <p class="page-note" id="deliveredRevenueValue">Rs. 0 in delivered value so far.</p>
-            </div>
-          </div>
-        </article>
       </section>
 
       <section class="delivered-panel">

@@ -56,6 +56,7 @@
     }
 
     .products-grid {
+      align-items: start;
       display: grid;
       gap: 18px;
       grid-template-columns: repeat(auto-fit, minmax(min(330px, 100%), 1fr));
@@ -72,6 +73,19 @@
       gap: 16px;
       min-width: 0;
       padding: 20px;
+    }
+
+    .product-card {
+      align-self: start;
+      cursor: pointer;
+      transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    }
+
+    .product-card.is-editing {
+      border-color: #cf6540;
+      box-shadow: 0 14px 34px rgba(207, 101, 64, 0.16);
+      cursor: default;
+      transform: translateY(-1px);
     }
 
     .product-card-head {
@@ -158,6 +172,93 @@
       overflow-wrap: anywhere;
     }
 
+    .product-edit-form {
+      border-top: 1px solid var(--line);
+      display: none;
+      gap: 10px;
+      padding-top: 14px;
+    }
+
+    .product-card.is-editing .product-edit-form {
+      display: grid;
+    }
+
+    .product-edit-form label {
+      color: var(--muted);
+      display: grid;
+      font-size: 12px;
+      font-weight: 800;
+      gap: 6px;
+      text-transform: uppercase;
+    }
+
+    .product-edit-form input[type="number"],
+    .product-edit-form input[type="text"] {
+      background: #fffaf4;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--ink);
+      font: inherit;
+      min-height: 40px;
+      min-width: 0;
+      padding: 9px 10px;
+      width: 100%;
+    }
+
+    .product-edit-actions {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .product-edit-form button,
+    .secondary-product-btn {
+      background: #2f7d48;
+      border: 0;
+      border-radius: 10px;
+      color: #fff;
+      cursor: pointer;
+      font-weight: 800;
+      min-height: 42px;
+      padding: 10px 14px;
+    }
+
+    .product-edit-form .secondary-product-btn {
+      background: #fff6f2;
+      border: 1px solid #e7b7a4;
+      color: #9c3f2a;
+    }
+
+    .product-edit-form button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .products-panel-head {
+      align-items: start;
+      display: flex;
+      gap: 14px;
+      justify-content: space-between;
+    }
+
+    .product-page-status,
+    .product-table-note {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      margin: 0;
+    }
+
+    .product-page-status.success {
+      color: #2f7d48;
+      font-weight: 800;
+    }
+
+    .product-page-status.error {
+      color: #c8483b;
+      font-weight: 800;
+    }
+
     .products-table-wrap {
       min-width: 0;
       overflow-x: auto;
@@ -188,15 +289,25 @@
       overflow-wrap: anywhere;
     }
 
+    .products-table th:nth-child(3),
     .products-table td:nth-child(3),
+    .products-table th:nth-child(4),
     .products-table td:nth-child(4),
+    .products-table th:nth-child(5),
     .products-table td:nth-child(5),
+    .products-table th:nth-child(6),
     .products-table td:nth-child(6) {
       text-align: right;
+    }
+
+    .products-table th:nth-child(7),
+    .products-table td:nth-child(7) {
+      text-align: left;
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./Supabase.js"></script>
+  <script src="./product-pricing.js"></script>
   <script src="./admin-pages.js"></script>
   <script src="./products-page.js"></script>
 </body>

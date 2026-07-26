@@ -75,7 +75,7 @@ function kpiIsSubscriptionItem(item) {
 }
 
 function kpiItemValue(item) {
-  return (Number(item.price) || 0) * (Number(item.packets) || 1);
+  return window.JFAMPricing?.lineTotal(item) ?? ((Number(item.price) || 0) * (Number(item.packets) || 1));
 }
 
 function kpiUniqueCount(orders) {
@@ -99,23 +99,26 @@ function kpiFormatDuration(hours) {
 
 function kpiNormalizeOrder(row) {
   const profile = row.profile || {};
+  const items = (Array.isArray(row.order_items) ? row.order_items : []).map(item => ({
+    name: item.product_name || "",
+    price: window.JFAMPricing?.price(item.product_name, item.price) ?? Number(item.price) ?? 0,
+    packets: Number(item.packets) || 1,
+    startDate: item.start_date || "",
+    endDate: item.end_date || "",
+    plan: item.plan || "",
+    cancelled: Boolean(item.cancelled)
+  }));
+
   return {
     id: row.id,
     userId: row.user_id,
     orderedAt: row.ordered_at,
     updatedAt: row.updated_at,
     status: row.status || "Confirmed",
-    totalAmount: Number(row.total_amount) || 0,
+    totalAmount: window.JFAMPricing?.orderTotal({ ...row, items }) ?? Number(row.total_amount) ?? 0,
     customerMobile: profile.mobile || "",
     customerEmail: profile.email || "",
-    items: (Array.isArray(row.order_items) ? row.order_items : []).map(item => ({
-      price: Number(item.price) || 0,
-      packets: Number(item.packets) || 1,
-      startDate: item.start_date || "",
-      endDate: item.end_date || "",
-      plan: item.plan || "",
-      cancelled: Boolean(item.cancelled)
-    }))
+    items
   };
 }
 
@@ -455,6 +458,7 @@ async function kpiRefresh() {
 function setupKpiPage() {
   document.title = "Key performance | JFAM Admin";
   pageApplyIcons("kpis");
+  pageSetupMobileMore("kpis");
   pageSetSidebarCollapsed(localStorage.getItem("jfamSidebarCollapsed") === "true");
 
   document.getElementById("sidebarToggleBtn")?.addEventListener("click", () => {
